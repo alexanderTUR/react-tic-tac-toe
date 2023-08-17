@@ -1,20 +1,28 @@
 import Board from './Board';
 import { useState } from 'react';
 
-// Game component
 const Game = () => {
   // State management for the game
   const [history, setHistory] = useState([Array(9).fill(null)]);
   const [currentMove, setCurrentMove] = useState(0);
   const [sortAscending, setSortAscending] = useState(true);
+  const [movesLocation, setMovesLocation] = useState([]);
+
+  // Determine if it's X's turn based on the current move
   const xIsNext = currentMove % 2 === 0;
+  // Get the current state of the game board
   const currentSquares = history[currentMove];
 
   // Handler for playing a move
-  const handlePlay = (nextSquares) => {
+  const handlePlay = (nextSquares, squareIndex) => {
+    // Update history with new move
     const newHistory = [...history.slice(0, currentMove + 1), nextSquares];
+    // Update move location history
+    const newMovesLocation = [...movesLocation.slice(0, currentMove), squareIndex];
+
     setHistory(newHistory);
     setCurrentMove(newHistory.length - 1);
+    setMovesLocation(newMovesLocation);
   };
 
   // Handler for jumping to a specific move
@@ -27,20 +35,34 @@ const Game = () => {
     setSortAscending(!sortAscending);
   };
 
-  // Generate the list of moves
+  // Calculate row and column indices from a linear index
+  const getRowColFromIndex = (index) => {
+    const row = Math.floor(index / 3);
+    const col = index % 3;
+    return [row, col];
+  };
+
+  // Generate the description for each move
+  const generateMoveDescription = (move, row, col) => {
+    return move === 0 ? 'Go to game start' : `Go to move #${move} (${row + 1}, ${col + 1})`;
+  };
+
+  // Generate the list of moves with their descriptions
   const moves = history.map((step, move) => {
-    let description;
-    if (move > 0) {
-      description = `Go to move #${move}`;
-    } else if (move === currentMove) {
-      description = `You are at move #${move}`;
-    } else {
-      description = 'Go to game start';
-    }
+    const [row, col] = getRowColFromIndex(movesLocation[move - 1]);
+    const description = generateMoveDescription(move, row, col);
+
+    const isCurrentMove = move === currentMove;
+    const moveContent = isCurrentMove
+      ? move === 0
+        ? 'You are at start'
+        : `You are at move #${move} (${row + 1}, ${col + 1})`
+      : description;
+
     return (
       <li key={move}>
-        {move === currentMove ? (
-          <span>{move === 0 ? 'You are at start' : `You are at move #${move}`}</span>
+        {isCurrentMove ? (
+          <span>{moveContent}</span>
         ) : (
           <button onClick={() => jumpTo(move)}>{description}</button>
         )}
@@ -48,7 +70,7 @@ const Game = () => {
     );
   });
 
-  // Reverse moves if sort order is descending
+  // Reverse the order of moves if sortAscending is false
   if (!sortAscending) {
     moves.reverse();
   }
@@ -56,7 +78,11 @@ const Game = () => {
   return (
     <div className="game">
       <div className="game-board">
-        <Board xIsNext={xIsNext} squares={currentSquares} onPlay={handlePlay} />
+        <Board
+          xIsNext={xIsNext}
+          squares={currentSquares}
+          onPlay={(nextSquares, squareIndex) => handlePlay(nextSquares, squareIndex)}
+        />
       </div>
       <div className="game-info">
         <div>

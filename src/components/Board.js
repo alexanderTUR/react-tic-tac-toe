@@ -1,31 +1,37 @@
 import Square from './Square';
 
-// Board component
 const Board = ({ xIsNext, squares, onPlay }) => {
   // Handler for clicking on a square
   const handleClick = (i) => {
+    // Prevent further actions if the square is already filled or there's a winner
     if (squares[i] || calculateWinner(squares).winner) {
       return;
     }
-    const nextSquares = [...squares];
+    // Create a copy of the current squares array
+    const nextSquares = squares.slice();
+    // Fill the square with 'X' or 'O' based on the player's turn
     nextSquares[i] = xIsNext ? 'X' : 'O';
-    onPlay(nextSquares);
+    // Call the onPlay function to update game state
+    onPlay(nextSquares, i);
   };
 
-  // Calculate game status
+  // Calculate the winner and the winning line
   const { winner, line } = calculateWinner(squares);
-  let status;
-  if (winner) {
-    status = `Winner: ${winner}`;
-  } else if (!squares.includes(null)) {
-    status = `It's a draw`;
-  } else {
-    status = 'Next player: ' + (xIsNext ? 'X' : 'O');
-  }
+
+  // Determine the game status based on winner or draw
+  const getStatus = () => {
+    if (winner) {
+      return `Winner: ${winner}`;
+    } else if (!squares.includes(null)) {
+      return `It's a draw`;
+    } else {
+      return 'Next player: ' + (xIsNext ? 'X' : 'O');
+    }
+  };
 
   return (
     <>
-      <div className="status">{status}</div>
+      <div className="status">{getStatus()}</div>
       {Array(3)
         .fill(null)
         .map((_, row) => (
@@ -33,11 +39,14 @@ const Board = ({ xIsNext, squares, onPlay }) => {
             {Array(3)
               .fill(null)
               .map((_, col) => {
+                // Calculate the linear index for the current square
                 const index = row * 3 + col;
                 return (
                   <Square
                     key={index}
+                    // Check if the current square is part of the winning line
                     victory={line && line.includes(index)}
+                    // Pass the value and click handler to the Square component
                     value={squares[index]}
                     onSquareClick={() => handleClick(index)}
                   />
@@ -49,23 +58,23 @@ const Board = ({ xIsNext, squares, onPlay }) => {
   );
 };
 
-// Calculate the winner of the game
+// Calculate the winner of the game and the winning line
 const calculateWinner = (squares) => {
   const lines = [
-    // Horizontal
     [0, 1, 2],
     [3, 4, 5],
     [6, 7, 8],
-    // Vertical
     [0, 3, 6],
     [1, 4, 7],
     [2, 5, 8],
-    // Diagonal
     [0, 4, 8],
     [2, 4, 6],
   ];
+
+  // Check each possible winning line
   for (const line of lines) {
     const [a, b, c] = line;
+    // If the squares in the line are the same, return the winner and the line
     if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
       return {
         winner: squares[a],
@@ -73,6 +82,8 @@ const calculateWinner = (squares) => {
       };
     }
   }
+
+  // Return no winner and no winning line
   return {
     winner: null,
     line: null,
